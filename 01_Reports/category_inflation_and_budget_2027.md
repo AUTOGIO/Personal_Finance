@@ -4,7 +4,11 @@ Sector-by-sector breakdown of the R$79,744.57 tracked in `Registro de
 Compras` (3,572 transactions, 2022–2026), and the three 2027 budget
 scenarios modeled in the `Terminal IIP` sheet.
 
-![Category inflation and 2027 budget](../04_Charts/category_inflation_and_budget_2027.png)
+![Category budget weights and 2027 scenarios](../04_Charts/category_inflation_and_budget_2027.png)
+
+The chart (dark terminal style) shows the ledger budget-weight vector on the left
+and the audited 2027 scenario budgets on the right — the two figures this report
+is built around.
 
 ---
 
