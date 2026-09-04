@@ -1,0 +1,54 @@
+---
+description: Operating rules for edu_price_analysis — Eduardo's personal price-inflation and cash-flow tracking project (two live Excel models + a Bloomberg-style HTML dashboard). Always apply inside this repo.
+globs:
+alwaysApply: true
+---
+
+# edu_price_analysis — operating rules
+
+Real personal finance data — private, not a sandbox. Full detail in
+`AGENTS.md` and `USER_GUIDE.md` at the project root; read them before a
+substantial edit. This file is the always-on fast version.
+
+## Two tracks
+
+- **Track 1 (IIP):** `02_Models/personal_inflation_tracker-v2.xlsx`
+  (`Registro de Compras` ledger + `Terminal IIP` sheet) +
+  `02_Models/iip_terminal.html` dashboard. Live stats in
+  `README_Personal_Inflation.md`.
+- **Track 2 (Cash-Flow Sanebox):** `02_Models/modelo_financeiro_saneado_v3.xlsx`.
+
+Know which track you're touching — separate canonical files, separate
+source data in `03_Raw_Data/`.
+
+## Non-negotiables
+
+1. **Backup before editing a model.** `make backup` for the IIP tracker;
+   copy the cash-flow model by hand before touching it. Every edit must be
+   reversible.
+2. **Never merge public/store-wide data into `Registro de Compras`.**
+   Market-wide data (e.g. a competitor's full-day sales dump) is a
+   `05_Comparisons/` benchmark, never a personal-ledger entry.
+3. **Don't silently recompute the audited IIP figures** — cumulative IIP
+   (+40.23%), its annual series, the market benchmark (+28.25%), and the
+   2027 scenario table are hardcoded (`Terminal IIP` D11:D14, F11:F14,
+   H8:J13), not formulas, and two reconciliation attempts already failed
+   to reproduce them from raw data. Update what's directly computable;
+   leave those specific numbers alone unless explicitly asked to
+   re-derive the methodology as its own task.
+4. **Confirm before deleting anything in this repo.**
+
+## Adding a transaction
+
+1. `make backup`
+2. Append to `Registro de Compras`: ID, date, item, qty, unit price, total
+   (as `=Qty*Unit`, not a static value), category, merchant.
+3. Verify the sum against the source document's printed total.
+4. Recompute and update `README_Personal_Inflation.md` headline stats from
+   the ledger directly — don't estimate.
+5. If `iip_terminal.html` needs the new data, regenerate its tables by
+   hand from the same recomputed numbers (it's static, not xlsx-linked).
+
+## Commands
+
+`make help` · `make open` · `make backup` · `make tree`

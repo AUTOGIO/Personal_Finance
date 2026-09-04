@@ -1,0 +1,671 @@
+<title>IIP Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#0a0d12;
+    --surface:#10151b;
+    --surface-2:#151b22;
+    --surface-3:#1b232c;
+    --border:#232c37;
+    --border-bright:#374654;
+    --text:#dbe3ea;
+    --text-dim:#8b98a6;
+    --text-faint:#4d5964;
+    --accent:#ff9f1c;
+    --accent-dim:#8a5a19;
+    --accent-2:#37b6f0;
+    --pos:#33d17a;
+    --neg:#ff5c5c;
+    --warn:#ffd166;
+    --grid:rgba(219,227,234,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  ::selection{background:var(--accent);color:#1a1204;}
+
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  h1,h2,h3,.label,.tabbtn,.brand,button{
+    font-family:'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  a{color:var(--accent-2);}
+
+  /* ---------- shell ---------- */
+  .shell{min-height:100vh;display:flex;flex-direction:column;}
+
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; gap:18px;
+    padding:9px 18px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    font-size:12.5px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-weight:800; font-size:17px; letter-spacing:0.04em;
+    color:var(--text); white-space:nowrap;
+  }
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none;}
+  .brand small{font-weight:600; color:var(--accent); font-size:11px; letter-spacing:0.14em; margin-left:2px;}
+  .topbar .sep{width:1px;height:18px;background:var(--border-bright);flex:none;}
+  .topbar .field{color:var(--text-dim); white-space:nowrap;}
+  .topbar .field b{color:var(--text); font-weight:600;}
+  .topbar .spacer{flex:1;}
+  .status-pill{
+    display:flex; align-items:center; gap:6px;
+    border:1px solid var(--border-bright); border-radius:3px;
+    padding:3px 9px; color:var(--pos); font-size:11px; letter-spacing:0.06em;
+    font-family:'Barlow Condensed',sans-serif; font-weight:600;
+  }
+  .status-pill i{width:6px;height:6px;border-radius:50%;background:var(--pos);animation:blink 2.2s ease-in-out infinite;}
+  @keyframes blink{0%,55%{opacity:1;}60%,90%{opacity:0.25;}100%{opacity:1;}}
+  #clock{color:var(--text); font-weight:600; letter-spacing:0.03em;}
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    position:sticky; top:37px; z-index:39;
+    display:flex; overflow-x:auto; scrollbar-width:thin;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--border);
+  }
+  .tabbtn{
+    flex:none; appearance:none; border:none; background:transparent; cursor:pointer;
+    color:var(--text-dim); font-weight:600; font-size:13.5px; letter-spacing:0.05em;
+    padding:9px 16px 8px; border-bottom:2px solid transparent;
+    white-space:nowrap; transition:color .12s, border-color .12s, background .12s;
+  }
+  .tabbtn .n{color:var(--accent-dim); margin-right:6px; font-weight:700;}
+  .tabbtn:hover{color:var(--text); background:var(--surface-3);}
+  .tabbtn.active{color:var(--accent); border-bottom-color:var(--accent); background:var(--surface);}
+  .tabbtn.active .n{color:var(--accent);}
+  .tabbtn:focus-visible{outline:2px solid var(--accent-2); outline-offset:-2px;}
+
+  /* ---------- content ---------- */
+  main{flex:1; padding:22px 22px 10px; max-width:1280px; width:100%; margin:0 auto;}
+  .page{display:none;}
+  .page.active{display:block; animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;}}
+
+  .page-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+  .page-head h1{margin:0; font-size:24px; font-weight:800; letter-spacing:0.01em; text-wrap:balance; color:var(--text);}
+  .page-head .sub{color:var(--text-dim); font-size:12.5px; font-family:'IBM Plex Mono',monospace;}
+
+  .grid{display:grid; gap:14px;}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  @media (max-width:860px){.g2,.g3{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:4px;
+    overflow:hidden;
+  }
+  .ph{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 12px; background:var(--surface-2); border-bottom:1px solid var(--border);
+    font-weight:700; font-size:12.5px; letter-spacing:0.09em; color:var(--text-dim); text-transform:uppercase;
+  }
+  .ph .tag{font-size:10.5px; color:var(--accent); border:1px solid var(--accent-dim); border-radius:2px; padding:1px 6px; letter-spacing:0.06em;}
+  .pb{padding:14px;}
+
+  /* ---------- kpis ---------- */
+  .kpi-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:1px; background:var(--border);}
+  @media (max-width:1000px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:560px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--surface); padding:13px 14px;}
+  .kpi .kl{font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; color:var(--text-faint); text-transform:uppercase;}
+  .kpi .kv{font-size:21px; font-weight:600; margin-top:5px; letter-spacing:-0.01em;}
+  .kpi .kd{font-size:11.5px; margin-top:3px; font-weight:500;}
+  .up{color:var(--neg);} .down{color:var(--pos);} .flat{color:var(--text-dim);} .hi{color:var(--accent);}
+
+  /* ---------- tables ---------- */
+  .twrap{overflow-x:auto;}
+  table.bt{width:100%; border-collapse:collapse; font-size:12.5px; white-space:nowrap;}
+  table.bt th{
+    text-align:left; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:11px;
+    letter-spacing:0.07em; text-transform:uppercase; color:var(--text-faint);
+    padding:7px 10px; border-bottom:1px solid var(--border-bright); position:sticky; top:0; background:var(--surface);
+  }
+  table.bt td{padding:6.5px 10px; border-bottom:1px solid var(--border); color:var(--text);}
+  table.bt tbody tr:hover{background:var(--surface-3);}
+  table.bt td.num, table.bt th.num{text-align:right;}
+  table.bt td.dim{color:var(--text-dim);}
+
+  .badge{display:inline-block; padding:1.5px 7px; border-radius:2px; font-size:10.5px; font-weight:700; letter-spacing:0.05em; font-family:'Barlow Condensed',sans-serif;}
+  .badge-pos{color:var(--pos); background:rgba(51,209,122,0.12); border:1px solid rgba(51,209,122,0.35);}
+  .badge-neg{color:var(--neg); background:rgba(255,92,92,0.12); border:1px solid rgba(255,92,92,0.35);}
+  .badge-flat{color:var(--text-dim); background:rgba(139,152,166,0.12); border:1px solid var(--border-bright);}
+  .badge-accent{color:var(--accent); background:rgba(255,159,28,0.12); border:1px solid var(--accent-dim);}
+
+  /* ---------- bars ---------- */
+  .barlist{display:flex; flex-direction:column; gap:10px;}
+  .barrow{display:grid; grid-template-columns:150px 1fr 78px; align-items:center; gap:10px; font-size:12.5px;}
+  .barrow .bl{color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-weight:600; letter-spacing:0.02em;}
+  .barrow .btrack{height:9px; background:var(--surface-3); border-radius:2px; overflow:hidden; border:1px solid var(--border);}
+  .barrow .bfill{height:100%; background:linear-gradient(90deg, var(--accent-dim), var(--accent));}
+  .barrow .bv{text-align:right; font-weight:600;}
+
+  /* ---------- ticker tape ---------- */
+  .ticker-wrap{
+    border-top:1px solid var(--border); background:var(--surface); overflow:hidden;
+    height:30px; display:flex; align-items:center; flex:none;
+  }
+  .ticker-track{display:flex; gap:34px; white-space:nowrap; animation:scroll-left 46s linear infinite; padding-left:100%;}
+  .ticker-wrap:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll-left{from{transform:translateX(0);} to{transform:translateX(-100%);}}
+  .tick{font-size:12px; font-weight:600; letter-spacing:0.02em;}
+  .tick .tn{color:var(--text-dim); margin-right:6px;}
+
+  /* ---------- misc ---------- */
+  .prose{font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.75; color:var(--text-dim); max-width:70ch;}
+  .prose strong{color:var(--text); font-weight:600;}
+  .formula{
+    font-family:'IBM Plex Mono',monospace; font-size:13.5px; color:var(--accent);
+    background:var(--surface-2); border:1px solid var(--border); border-radius:4px;
+    padding:14px 16px; margin:12px 0; overflow-x:auto;
+  }
+  .note{
+    border-left:3px solid var(--accent-dim); background:var(--surface-2); border-radius:0 4px 4px 0;
+    padding:10px 13px; font-size:12px; color:var(--text-dim); line-height:1.6;
+  }
+  .footline{padding:8px 22px; color:var(--text-faint); font-size:11px; text-align:center; border-top:1px solid var(--border);}
+  .spark{display:block;}
+</style>
+
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>IIP TERMINAL<small>PERSONAL PRICE INTEL</small></div>
+    <div class="sep"></div>
+    <div class="field">ACCOUNT <b>PORTFOLIO MAIN</b></div>
+    <div class="field">BASE_YEAR <b>2022</b></div>
+    <div class="field">RANGE <b>2022&ndash;2026</b></div>
+    <div class="spacer"></div>
+    <div class="status-pill"><i></i>LIVE LEDGER</div>
+    <div class="sep"></div>
+    <div id="clock">--:--:--</div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tabbtn active" data-page="p0"><span class="n">00</span>CMD CTR</button>
+    <button class="tabbtn" data-page="p1"><span class="n">01</span>IIP&lt;GO&gt;</button>
+    <button class="tabbtn" data-page="p2"><span class="n">02</span>CATEGORIES</button>
+    <button class="tabbtn" data-page="p3"><span class="n">03</span>BENCHMARK</button>
+    <button class="tabbtn" data-page="p4"><span class="n">04</span>SCENARIOS 27</button>
+    <button class="tabbtn" data-page="p5"><span class="n">05</span>WATCHLIST</button>
+    <button class="tabbtn" data-page="p6"><span class="n">06</span>TX LOG</button>
+    <button class="tabbtn" data-page="p7"><span class="n">07</span>METHOD</button>
+  </nav>
+
+  <main>
+
+    <!-- ============ PAGE 00 — CMD CTR ============ -->
+    <section class="page active" id="p0">
+      <div class="page-head">
+        <h1>Command Center</h1>
+        <div class="sub">Registro de Compras &middot; 3,572 transactions &middot; Jan 2022&ndash;Sep 2026</div>
+      </div>
+
+      <div class="kpi-grid" style="margin-bottom:14px;">
+        <div class="kpi"><div class="kl">Total Spend</div><div class="kv">R$79,744.57</div><div class="kd flat">3,572 tx</div></div>
+        <div class="kpi"><div class="kl">Your IIP (cum.)</div><div class="kv up">+40.23%</div><div class="kd dim" style="color:var(--text-dim)">chained Jevons</div></div>
+        <div class="kpi"><div class="kl">Market (IPCA proxy)</div><div class="kv up">+28.25%</div><div class="kd flat">benchmark</div></div>
+        <div class="kpi"><div class="kl">Divergence</div><div class="kv up">+11.98pp</div><div class="kd flat">you vs. market</div></div>
+        <div class="kpi"><div class="kl">Top Merchant</div><div class="kv hi">Litoral</div><div class="kd flat">94.11% of spend</div></div>
+        <div class="kpi"><div class="kl">2026 YTD</div><div class="kv">R$10,382.42</div><div class="kd flat">405 tx thru Sep</div></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="panel">
+          <div class="ph">Annual Spend &mdash; Registro de Compras <span class="tag">R$ / YEAR</span></div>
+          <div class="pb">
+            <svg viewBox="0 0 600 210" width="100%" role="img" aria-label="Annual spend by year, 2022 through 2026">
+              <line x1="40" y1="190" x2="580" y2="190" stroke="var(--border-bright)" stroke-width="1"/>
+              <g font-family="IBM Plex Mono" font-size="10.5" fill="var(--text-dim)">
+                <text x="45" y="30" fill="var(--text-faint)">R$</text>
+              </g>
+              <g>
+                <rect x="45" y="105.4" width="70" height="84.6" fill="var(--accent-dim)"/>
+                <rect x="155" y="120.2" width="70" height="69.8" fill="var(--accent-dim)"/>
+                <rect x="265" y="102.8" width="70" height="87.2" fill="var(--accent-dim)"/>
+                <rect x="375" y="30" width="70" height="160" fill="var(--accent)"/>
+                <rect x="485" y="129.9" width="70" height="60.1" fill="var(--accent-dim)"/>
+              </g>
+              <g font-family="IBM Plex Mono" font-size="11" fill="var(--text)" text-anchor="middle">
+                <text x="80" y="98">14,607</text>
+                <text x="190" y="113">12,057</text>
+                <text x="300" y="95">15,061</text>
+                <text x="410" y="23" fill="var(--accent)" font-weight="700">27,637</text>
+                <text x="520" y="123">10,382*</text>
+              </g>
+              <g font-family="Barlow Condensed" font-size="12" font-weight="600" fill="var(--text-dim)" text-anchor="middle">
+                <text x="80" y="204">2022</text>
+                <text x="190" y="204">2023</text>
+                <text x="300" y="204">2024</text>
+                <text x="410" y="204">2025</text>
+                <text x="520" y="204">2026*</text>
+              </g>
+            </svg>
+            <div class="note" style="margin-top:8px;">*2026 is partial-year (Jan&ndash;Sep). 2025 is the ledger's heaviest year by both spend and transaction count (1,582 tx) &mdash; consistent with the Litoral notes added in Jul/Sep.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph">Category Allocation <span class="tag">SUMIF</span></div>
+          <div class="pb">
+            <div class="barlist">
+              <div class="barrow"><div class="bl">Aliment. &amp; Bebidas</div><div class="btrack"><div class="bfill" style="width:86.1%"></div></div><div class="bv">86.10%</div></div>
+              <div class="barrow"><div class="bl">Transporte</div><div class="btrack"><div class="bfill" style="width:5.73%"></div></div><div class="bv">5.73%</div></div>
+              <div class="barrow"><div class="bl">Sa&uacute;de &amp; Cuidados</div><div class="btrack"><div class="bfill" style="width:4.78%"></div></div><div class="bv">4.78%</div></div>
+              <div class="barrow"><div class="bl">Servi&ccedil;os/Entregas</div><div class="btrack"><div class="bfill" style="width:2.07%"></div></div><div class="bv">2.07%</div></div>
+              <div class="barrow"><div class="bl">Habita&ccedil;&atilde;o</div><div class="btrack"><div class="bfill" style="width:1.33%"></div></div><div class="bv">1.33%</div></div>
+            </div>
+            <div class="twrap" style="margin-top:16px;">
+              <table class="bt">
+                <thead><tr><th>Merchant</th><th class="num">Total</th><th class="num">Share</th></tr></thead>
+                <tbody>
+                  <tr><td>Supermercado Litoral</td><td class="num">R$75,050.95</td><td class="num hi">94.11%</td></tr>
+                  <tr><td>Polpetines de Origem</td><td class="num dim">R$2,376.00</td><td class="num dim">2.98%</td></tr>
+                  <tr><td>Masterboi Para&iacute;ba</td><td class="num dim">R$753.17</td><td class="num dim">0.94%</td></tr>
+                  <tr><td>Leroy Merlin</td><td class="num dim">R$626.51</td><td class="num dim">0.79%</td></tr>
+                  <tr><td>Fetta Pizza</td><td class="num dim">R$440.86</td><td class="num dim">0.55%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 01 — IIP<GO> ============ -->
+    <section class="page" id="p1">
+      <div class="page-head">
+        <h1>Personal Inflation Index</h1>
+        <div class="sub">Chained Jevons &middot; rebased to 100 at 2022</div>
+      </div>
+
+      <div class="grid g2">
+        <div class="panel">
+          <div class="ph">Index Trend <span class="tag">IIP vs MARKET</span></div>
+          <div class="pb">
+            <svg viewBox="0 0 600 220" width="100%" role="img" aria-label="Personal inflation index versus market index, 2022 to 2026">
+              <g stroke="var(--grid)" stroke-width="1">
+                <line x1="55" y1="45" x2="555" y2="45"/>
+                <line x1="55" y1="77" x2="555" y2="77"/>
+                <line x1="55" y1="109" x2="555" y2="109"/>
+                <line x1="55" y1="141" x2="555" y2="141"/>
+                <line x1="55" y1="174" x2="555" y2="174"/>
+              </g>
+              <g font-family="IBM Plex Mono" font-size="10" fill="var(--text-faint)" text-anchor="end">
+                <text x="50" y="49">140</text><text x="50" y="81">130</text><text x="50" y="113">120</text><text x="50" y="145">110</text><text x="50" y="178">100</text>
+              </g>
+              <polyline points="60,174 180,139.15 300,97.55 420,89.46 540,83.66" fill="none" stroke="var(--accent-2)" stroke-width="2.5"/>
+              <polyline points="60,174 180,156.6 300,91.76 420,76.53 540,45.23" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+              <g fill="var(--accent)"><circle cx="60" cy="174" r="3.2"/><circle cx="180" cy="156.6" r="3.2"/><circle cx="300" cy="91.76" r="3.2"/><circle cx="420" cy="76.53" r="3.2"/><circle cx="540" cy="45.23" r="3.6"/></g>
+              <g fill="var(--accent-2)"><circle cx="60" cy="174" r="3"/><circle cx="180" cy="139.15" r="3"/><circle cx="300" cy="97.55" r="3"/><circle cx="420" cy="89.46" r="3"/><circle cx="540" cy="83.66" r="3"/></g>
+              <text x="545" y="40" fill="var(--accent)" font-family="IBM Plex Mono" font-size="11" font-weight="700" text-anchor="end">140.2</text>
+              <text x="545" y="98" fill="var(--accent-2)" font-family="IBM Plex Mono" font-size="11" font-weight="700" text-anchor="end">128.2</text>
+              <g font-family="Barlow Condensed" font-size="12" font-weight="600" fill="var(--text-dim)" text-anchor="middle">
+                <text x="60" y="200">2022</text><text x="180" y="200">2023</text><text x="300" y="200">2024</text><text x="420" y="200">2025</text><text x="540" y="200">2026</text>
+              </g>
+            </svg>
+            <div style="display:flex; gap:16px; margin-top:8px; font-size:11.5px;">
+              <span style="color:var(--accent)">&#9679; Your IIP</span>
+              <span style="color:var(--accent-2)">&#9679; Market (IPCA proxy)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph">Annual Breakdown</div>
+          <div class="twrap">
+            <table class="bt">
+              <thead><tr><th>Year</th><th class="num">IIP idx</th><th class="num">YoY</th><th class="num">Mkt idx</th><th class="num">YoY</th><th class="num">Diff</th></tr></thead>
+              <tbody>
+                <tr><td>2022</td><td class="num">100.00</td><td class="num dim">&mdash;</td><td class="num">100.00</td><td class="num dim">&mdash;</td><td class="num dim">&mdash;</td></tr>
+                <tr><td>2023</td><td class="num">105.44</td><td class="num up">+5.44%</td><td class="num">110.89</td><td class="num up">+10.89%</td><td class="num down">&minus;5.45pp</td></tr>
+                <tr><td>2024</td><td class="num">125.70</td><td class="num up">+19.21%</td><td class="num">123.89</td><td class="num up">+11.74%</td><td class="num up">+7.47pp</td></tr>
+                <tr><td>2025</td><td class="num">130.46</td><td class="num up">+3.79%</td><td class="num">126.42</td><td class="num up">+2.04%</td><td class="num up">+1.75pp</td></tr>
+                <tr><td>2026</td><td class="num">140.24</td><td class="num up">+7.50%</td><td class="num">128.23</td><td class="num up">+1.43%</td><td class="num up">+6.07pp</td></tr>
+                <tr style="background:var(--surface-2)"><td><b>CUM.</b></td><td class="num hi"><b>+40.23%</b></td><td></td><td class="num"><b>+28.25%</b></td><td></td><td class="num up"><b>+11.98pp</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pb" style="padding-top:0;">
+            <div class="note">2024 is the outlier year: your basket rose +19.21% against a market +11.74%, the widest single-year gap. 2026 YTD is already running hot at +7.50% on partial-year data.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px;">
+        <div class="ph">Methodology <span class="tag">CHAINED JEVONS</span></div>
+        <div class="pb">
+          <div class="prose">Year-over-year price shifts are compared using an <strong>unweighted geometric mean of price ratios</strong> for items purchased in both years (&Omega;), then chain-linked across the full 2022&ndash;2026 span so no single year's basket composition dominates the index.</div>
+          <div class="formula">I(t) = I(t&minus;1) &times; &prod;<sub>i&isin;&Omega;</sub> ( P(i,t) / P(i,t&minus;1) )<sup>1/n</sup></div>
+          <div class="prose">Budget weights (page 02) size each category's contribution to total spend but do not enter the Jevons ratio itself &mdash; the index is a pure price signal, decoupled from how much of each category you actually buy.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 02 — CATEGORIES ============ -->
+    <section class="page" id="p2">
+      <div class="page-head">
+        <h1>Spend by Category</h1>
+        <div class="sub">Budget weight vector W(c) &middot; R$79,744.57 total</div>
+      </div>
+      <div class="grid g2">
+        <div class="panel">
+          <div class="ph">Weight Vector</div>
+          <div class="pb">
+            <div class="barlist">
+              <div class="barrow"><div class="bl">Aliment. &amp; Bebidas</div><div class="btrack"><div class="bfill" style="width:86.1%"></div></div><div class="bv">86.10%</div></div>
+              <div class="barrow"><div class="bl">Transporte</div><div class="btrack"><div class="bfill" style="width:5.73%"></div></div><div class="bv">5.73%</div></div>
+              <div class="barrow"><div class="bl">Sa&uacute;de &amp; Cuidados</div><div class="btrack"><div class="bfill" style="width:4.78%"></div></div><div class="bv">4.78%</div></div>
+              <div class="barrow"><div class="bl">Servi&ccedil;os/Entregas</div><div class="btrack"><div class="bfill" style="width:2.07%"></div></div><div class="bv">2.07%</div></div>
+              <div class="barrow"><div class="bl">Habita&ccedil;&atilde;o</div><div class="btrack"><div class="bfill" style="width:1.33%"></div></div><div class="bv">1.33%</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Category Totals <span class="tag">R$</span></div>
+          <div class="twrap">
+            <table class="bt">
+              <thead><tr><th>Categoria</th><th class="num">Total Gasto</th><th class="num">Participa&ccedil;&atilde;o</th></tr></thead>
+              <tbody>
+                <tr><td>Alimenta&ccedil;&atilde;o e Bebidas</td><td class="num">R$68,656.57</td><td class="num hi">86.10%</td></tr>
+                <tr><td>Transporte e Automotivo</td><td class="num">R$4,572.39</td><td class="num">5.73%</td></tr>
+                <tr><td>Sa&uacute;de e Cuidados Pessoais</td><td class="num">R$3,808.05</td><td class="num">4.78%</td></tr>
+                <tr><td>Servi&ccedil;os e Entregas</td><td class="num">R$1,647.48</td><td class="num">2.07%</td></tr>
+                <tr><td>Habita&ccedil;&atilde;o e Constru&ccedil;&atilde;o</td><td class="num">R$1,060.08</td><td class="num">1.33%</td></tr>
+                <tr style="background:var(--surface-2)"><td><b>Total Geral</b></td><td class="num"><b>R$79,744.57</b></td><td class="num"><b>100.00%</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pb" style="padding-top:12px;">
+            <div class="note">Food &amp; beverage alone carries 86% of the weight vector &mdash; the Jevons index is, in practice, mostly a grocery-basket index. That's why the Litoral vs. Manaíra benchmark on page 03 matters disproportionately.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 03 — BENCHMARK ============ -->
+    <section class="page" id="p3">
+      <div class="page-head">
+        <h1>Manaíra vs. Litoral</h1>
+        <div class="sub">Snapshot 2025-12-30 &middot; 17 coincident SKUs, &plusmn;120-day match window</div>
+      </div>
+
+      <div class="kpi-grid" style="margin-bottom:14px; grid-template-columns:repeat(4,1fr);">
+        <div class="kpi"><div class="kl">Avg. Diff (coincident)</div><div class="kv down">&minus;6.32%</div><div class="kd flat">Manaíra cheaper</div></div>
+        <div class="kpi"><div class="kl">Median Diff</div><div class="kv down">&minus;5.56%</div><div class="kd flat">Manaíra cheaper</div></div>
+        <div class="kpi"><div class="kl">Hortifr&uacute;ti (10 SKUs)</div><div class="kv down">&minus;10.24%</div><div class="kd flat">avg., up to &minus;35.9%</div></div>
+        <div class="kpi"><div class="kl">Split</div><div class="kv">9 / 1 / 7</div><div class="kd flat">Manaíra / tie / Litoral</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">Coincident Basket <span class="tag">17 SKUs</span></div>
+        <div class="twrap">
+          <table class="bt">
+            <thead><tr><th>Produto</th><th>Un.</th><th class="num">Manaíra</th><th class="num">Litoral</th><th class="num">Diff</th></tr></thead>
+            <tbody>
+              <tr><td>Banana Prata</td><td class="dim">KG</td><td class="num">R$4.99</td><td class="num">R$7.79</td><td class="num"><span class="badge badge-pos">&minus;35.94%</span></td></tr>
+              <tr><td>Cebola Roxa</td><td class="dim">KG</td><td class="num">R$6.99</td><td class="num">R$9.99</td><td class="num"><span class="badge badge-pos">&minus;30.03%</span></td></tr>
+              <tr><td>Beterraba</td><td class="dim">KG</td><td class="num">R$4.99</td><td class="num">R$6.99</td><td class="num"><span class="badge badge-pos">&minus;28.61%</span></td></tr>
+              <tr><td>Cenoura</td><td class="dim">KG</td><td class="num">R$4.99</td><td class="num">R$6.99</td><td class="num"><span class="badge badge-pos">&minus;28.61%</span></td></tr>
+              <tr><td>Castanha de Caju Natural Caseira</td><td class="dim">KG</td><td class="num">R$97.99</td><td class="num">R$134.99</td><td class="num"><span class="badge badge-pos">&minus;27.41%</span></td></tr>
+              <tr><td>Manga Rosa</td><td class="dim">KG</td><td class="num">R$7.99</td><td class="num">R$9.99</td><td class="num"><span class="badge badge-pos">&minus;20.02%</span></td></tr>
+              <tr><td>Melão Espanhol</td><td class="dim">KG</td><td class="num">R$4.49</td><td class="num">R$4.99</td><td class="num"><span class="badge badge-pos">&minus;10.02%</span></td></tr>
+              <tr><td>Sabonete Phebo Raiz do Oriente 90g</td><td class="dim">UN</td><td class="num">R$4.99</td><td class="num">R$5.29</td><td class="num"><span class="badge badge-pos">&minus;5.67%</span></td></tr>
+              <tr><td>Fio Dental Colgate Menta 50m</td><td class="dim">UN</td><td class="num">R$16.99</td><td class="num">R$17.99</td><td class="num"><span class="badge badge-pos">&minus;5.56%</span></td></tr>
+              <tr><td>Laranja Pera</td><td class="dim">KG</td><td class="num">R$2.99</td><td class="num">R$2.99</td><td class="num"><span class="badge badge-flat">0.00%</span></td></tr>
+              <tr><td>&Aacute;gua Sanit&aacute;ria Olimpo 5L</td><td class="dim">UN</td><td class="num">R$11.99</td><td class="num">R$11.29</td><td class="num"><span class="badge badge-neg">+6.20%</span></td></tr>
+              <tr><td>Caldo Saz&oacute;n 32,5g Carne</td><td class="dim">UN</td><td class="num">R$2.69</td><td class="num">R$2.49</td><td class="num"><span class="badge badge-neg">+8.03%</span></td></tr>
+              <tr><td>&Aacute;gua Sanit&aacute;ria Tubar&atilde;o 5L</td><td class="dim">UN</td><td class="num">R$12.99</td><td class="num">R$11.99</td><td class="num"><span class="badge badge-neg">+8.34%</span></td></tr>
+              <tr><td>Pimentão Verde</td><td class="dim">KG</td><td class="num">R$11.99</td><td class="num">R$10.99</td><td class="num"><span class="badge badge-neg">+9.10%</span></td></tr>
+              <tr><td>Molho Ingl&ecirc;s Kenko 150ml</td><td class="dim">UN</td><td class="num">R$4.99</td><td class="num">R$4.49</td><td class="num"><span class="badge badge-neg">+11.14%</span></td></tr>
+              <tr><td>Tomate</td><td class="dim">KG</td><td class="num">R$6.99</td><td class="num">R$5.99</td><td class="num"><span class="badge badge-neg">+16.69%</span></td></tr>
+              <tr><td>Gengibre</td><td class="dim">KG</td><td class="num">R$19.99</td><td class="num">R$15.99</td><td class="num"><span class="badge badge-neg">+25.02%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pb" style="padding-top:12px;">
+          <div class="note"><strong>Scope:</strong> market-price analysis, not personal spend &mdash; the 4,806 Manaíra NFC-e receipts from 2025-12-30 belong to many customers and were never merged into the transaction ledger. Litoral prices are median, comparable-package (<code>is_comparable</code>) records within 120 days of the snapshot. Read: hortifr&uacute;ti is where switching stores would save the most; packaged goods are close to a wash.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 04 — SCENARIOS ============ -->
+    <section class="page" id="p4">
+      <div class="page-head">
+        <h1>2027 Scenario Simulation</h1>
+        <div class="sub">Baseline annualized spend R$17,392.84</div>
+      </div>
+      <div class="panel">
+        <div class="ph">Select Scenario &middot; Cell I9</div>
+        <div class="twrap">
+          <table class="bt">
+            <thead><tr><th>Scenario</th><th class="num">IIP Rate</th><th class="num">Market Rate</th><th class="num">2027 Budget</th><th class="num">&Delta; Annual</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-pos">Otimista</span></td><td class="num">+2.00%</td><td class="num">+2.00%</td><td class="num">R$17,749.46</td><td class="num up">+R$356.62</td></tr>
+              <tr style="background:var(--surface-2)"><td><span class="badge badge-accent">Conservador &larr; active</span></td><td class="num">+5.00%</td><td class="num">+3.50%</td><td class="num"><b>R$18,182.82</b></td><td class="num up"><b>+R$789.98</b></td></tr>
+              <tr><td><span class="badge badge-neg">Pessimista</span></td><td class="num">+8.00%</td><td class="num">+6.00%</td><td class="num">R$18,835.07</td><td class="num up">+R$1,442.23</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pb" style="padding-top:12px;">
+          <div class="note">The three cases bracket a &plusmn;R$1,085 swing on the 2027 grocery-heavy budget. Given 2026 YTD is already tracking at +7.50%, Conservador may understate risk &mdash; worth revisiting once the full 2026 close is in.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 05 — WATCHLIST ============ -->
+    <section class="page" id="p5">
+      <div class="page-head">
+        <h1>Price Watchlist</h1>
+        <div class="sub">Key SKU ticker &middot; 2022&ndash;2026, single reference price per year</div>
+      </div>
+      <div class="panel">
+        <div class="ph">Monitored Items <span class="tag">6</span></div>
+        <div class="twrap">
+          <table class="bt">
+            <thead><tr><th>Item</th><th>Categoria</th><th class="num">2022</th><th class="num">2023</th><th class="num">2024</th><th class="num">2025</th><th class="num">2026</th><th>Trend</th><th class="num">22&rarr;26</th></tr></thead>
+            <tbody>
+              <tr><td>Cenoura KG</td><td class="dim">Aliment.</td><td class="num">3.99</td><td class="num">7.87</td><td class="num">5.49</td><td class="num">6.99</td><td class="num">9.99</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,24 22,8.5 44,18 66,12 88,0" fill="none" stroke="var(--neg)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+150.4%</span></td></tr>
+              <tr><td>Caf&eacute; Santa Clara 250g</td><td class="dim">Aliment.</td><td class="num">7.99</td><td class="num">8.29</td><td class="num">9.99</td><td class="num">14.99</td><td class="num">14.49</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,24 22,22.97 44,17.14 66,0 88,1.71" fill="none" stroke="var(--neg)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+81.4%</span></td></tr>
+              <tr><td>Desod. Axe Marine 152ml</td><td class="dim">Sa&uacute;de</td><td class="num">9.48</td><td class="num">10.89</td><td class="num">12.99</td><td class="num">14.99</td><td class="num">15.59</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,24 22,18.46 44,10.22 66,2.36 88,0" fill="none" stroke="var(--neg)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+64.5%</span></td></tr>
+              <tr><td>Taxa de Entrega</td><td class="dim">Servi&ccedil;os</td><td class="num">11.00</td><td class="num">9.90</td><td class="num">13.50</td><td class="num">16.00</td><td class="num">18.00</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,20.74 22,24 44,13.33 66,5.93 88,0" fill="none" stroke="var(--neg)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+63.6%</span></td></tr>
+              <tr><td>Manga Rosa KG</td><td class="dim">Aliment.</td><td class="num">6.49</td><td class="num">7.35</td><td class="num">7.74</td><td class="num">9.99</td><td class="num">9.99</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,24 22,18.1 44,15.43 66,0 88,0" fill="none" stroke="var(--neg)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+53.9%</span></td></tr>
+              <tr><td>Coca-Cola 250ml PET</td><td class="dim">Aliment.</td><td class="num">1.95</td><td class="num">1.99</td><td class="num">2.39</td><td class="num">2.55</td><td class="num">2.59</td>
+                <td><svg class="spark" width="90" height="24" viewBox="0 0 90 24"><polyline points="0,24 22,22.5 44,7.5 66,1.5 88,0" fill="none" stroke="var(--warn)" stroke-width="2"/></svg></td>
+                <td class="num"><span class="badge badge-neg">+32.8%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pb" style="padding-top:12px;">
+          <div class="note">Cenoura KG is the ledger's single most volatile line item: R$3.99 &rarr; R$9.99 in four years, briefly spiking to R$7.87 in 2023 before a mid-cycle dip. Everything on this list has only moved one direction since 2022: up.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 06 — TX LOG ============ -->
+    <section class="page" id="p6">
+      <div class="page-head">
+        <h1>Transaction Log</h1>
+        <div class="sub">Most recent 30 of 3,572 entries &middot; Registro de Compras</div>
+      </div>
+      <div class="panel">
+        <div class="ph">Latest Entries <span class="tag">TRX-13542 &rarr; TRX-13571</span></div>
+        <div class="twrap">
+          <table class="bt" id="txtable">
+            <thead><tr><th>ID</th><th>Data</th><th>Item</th><th class="num">Qtd</th><th class="num">Unit.</th><th class="num">Total</th><th>Categoria</th><th>Estab.</th></tr></thead>
+            <tbody id="txbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PAGE 07 — METHOD ============ -->
+    <section class="page" id="p7">
+      <div class="page-head">
+        <h1>Methodology &amp; Data Map</h1>
+        <div class="sub">Sources, scope, and what this terminal deliberately leaves untouched</div>
+      </div>
+      <div class="grid g2">
+        <div class="panel">
+          <div class="ph">Data Sources</div>
+          <div class="pb">
+            <table class="bt">
+              <tbody>
+                <tr><td>Registro de Compras</td><td class="dim">3,572 personal transactions, 2022&ndash;2026</td></tr>
+                <tr><td>Terminal IIP sheet</td><td class="dim">chained-Jevons index, category SUMIF, 2027 scenarios</td></tr>
+                <tr><td>Price_History (5-part CSV)</td><td class="dim">Litoral price series, comparable-package filtered</td></tr>
+                <tr><td>manaira01.csv</td><td class="dim">4,806 public NFC-e, store-wide &mdash; benchmark only</td></tr>
+                <tr><td>NFC-e XML / access-key</td><td class="dim">latest Litoral &amp; Masterboi receipts, itemized</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph">Formula Reference</div>
+          <div class="pb">
+            <div class="formula" style="font-size:12px;">I(t) = I(t&minus;1) &times; &prod; ( P(i,t)/P(i,t&minus;1) )<sup>1/n</sup></div>
+            <div class="prose">Geometric mean of YoY price ratios across overlapping SKUs (&Omega;), chain-linked from a 2022 base of 100. Category weights (page 02) determine budget significance, not the index itself.</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px;">
+        <div class="ph">Transparency Note <span class="tag">03/09/2026 REFRESH</span></div>
+        <div class="pb">
+          <div class="prose">This refresh recalculated total spend, transaction count, category weights, and the Cenoura outlier directly from <strong>Registro de Compras</strong>. The cumulative IIP (+40.23%), its annual YoY series, the market benchmark (+28.25%), and the 2027 scenario table were <strong>left untouched</strong>: two independent attempts to reproduce the published chained-Jevons figures from raw and cleaned price data did not match exactly, indicating an undocumented item-selection criterion in the original calculation. Publishing a new number that doesn't reconcile with the documented method was judged worse than flagging the gap and leaving the audited figures in place.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="ticker-wrap" aria-hidden="true">
+    <div class="ticker-track" id="ticktrack"></div>
+  </div>
+  <div class="footline">IIP TERMINAL &middot; personal price intelligence, styled after institutional market terminals &middot; not investment or trading data &middot; generated 2026-09-03</div>
+</div>
+
+<script>
+  // tab switching
+  var tabs = document.querySelectorAll('.tabbtn');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.page).classList.add('active');
+    });
+  });
+
+  // clock
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function tick(){
+    var d = new Date();
+    document.getElementById('clock').textContent = pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+  tick(); setInterval(tick, 1000);
+
+  // transaction log
+  var tx = [
+    ["TRX-13542","2026-09-02","Peixe Inteiro Manjuba Masterbo",1,21.59,21.59,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13543","2026-09-02","Pulverizador Sanremo 580ml Ref",1,12.99,12.99,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13544","2026-09-02","Alcool Santa Cruz 1L 54 Inpm",1,9.99,9.99,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13545","2026-09-02","Peixe Sardinha Masterboi Lage",1,14.49,14.49,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13546","2026-09-02","Peixe Sardinha Masterboi Lage",1,14.49,14.49,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13547","2026-09-02","Laranja Pera KG",3.33,1.99,6.63,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13548","2026-09-02","Creme Dental Sorriso Carvao At",1,8.29,8.29,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13549","2026-09-02","Creme Dental Sensodyne 90g Pro",1,24.99,24.99,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13550","2026-09-02","Sand.Ipanema Classica Azul Azu",1,14.99,14.99,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13551","2026-09-02","Papel Hig.Neve F.Tripla Suprem",1,27.89,27.89,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13552","2026-09-02","Desodorante Aero.Rexona Men 25",1,21.99,21.99,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13553","2026-09-02","Sabonete Phebo Tradicional 90g",1,5.49,5.49,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13554","2026-09-02","Desodorante Aero.Axe 152ml Urb",1,15.59,15.59,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13555","2026-09-02","Anti Ferrugem Wd40 Spray 300ml",1,46.99,46.99,"Alimentação e Bebidas","Supermercado Litoral"],
+    ["TRX-13556","2026-09-02","Inseticida Sbp Aero.Anti Aedes",1,17.99,17.99,"Saúde e Cuidados Pessoais","Supermercado Litoral"],
+    ["TRX-13557","2026-09-02*","Manjuba Inteira Mb",1,21.59,21.59,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13558","2026-09-02*","Ling Gourm Cuiabana",1,23.39,23.39,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13559","2026-09-02*","Pao de Alho Santa",1,14.99,14.99,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13560","2026-09-02*","Ling Fgo C Bac Brasa",1,24.39,24.39,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13561","2026-09-02*","Torresmo Crocant",1,18.99,18.99,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13562","2026-09-02*","Cordao de File Mb Cg KG",1.194,38.99,46.55,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13563","2026-09-02*","Fraldinha Mb Cg KG",1.064,42.99,45.74,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13564","2026-09-02*","Osso do Peru Mb KG",3.09,8.99,27.78,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13565","2026-09-02*","Costela Suina In Sadia",1.066,28.99,30.90,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13566","2026-09-02*","Esp Carne Mb",0.532,45.49,24.20,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13567","2026-09-02*","Mocoto Fat Vac KG",1.042,19.49,20.31,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13568","2026-09-02*","File Salmao Pedaco KD",2.656,120.99,321.35,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13569","2026-09-02*","Costela Sui C O",0.698,29.99,20.93,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13570","2026-09-02*","Coracao Paleta",1.798,60.49,108.76,"Alimentação e Bebidas","Masterboi Paraíba"],
+    ["TRX-13571","2026-09-02*","Agua Tonica Lt",1,3.29,3.29,"Alimentação e Bebidas","Masterboi Paraíba"]
+  ];
+  var catShort = {"Alimentação e Bebidas":"Alimentação","Saúde e Cuidados Pessoais":"Saúde","Serviços e Entregas":"Serviços","Habitação e Construção":"Habitação","Transporte e Automotivo":"Transporte"};
+  var body = document.getElementById('txbody');
+  tx.slice().reverse().forEach(function(r){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="dim">'+r[0]+'</td>'+
+      '<td>'+r[1]+'</td>'+
+      '<td>'+r[2]+'</td>'+
+      '<td class="num">'+r[3]+'</td>'+
+      '<td class="num">'+r[4].toFixed(2)+'</td>'+
+      '<td class="num">'+r[5].toFixed(2)+'</td>'+
+      '<td class="dim">'+(catShort[r[6]]||r[6])+'</td>'+
+      '<td class="dim">'+r[7]+'</td>';
+    body.appendChild(tr);
+  });
+
+  // ticker tape
+  var tickItems = [
+    ["IIP CUM 22-26","+40.23%","up"],
+    ["MKT CUM 22-26","+28.25%","up"],
+    ["DIVERGENCE","+11.98pp","up"],
+    ["LITORAL SHARE","94.11%","flat"],
+    ["CENOURA KG 22→26","+150.4%","up"],
+    ["CAFE 250G 22→26","+81.4%","up"],
+    ["TAXA ENTREGA 22→26","+63.6%","up"],
+    ["MANAIRA vs LITORAL","-6.32% avg","down"],
+    ["HORTIFRUTI DIFF","-10.24% avg","down"],
+    ["2026 YTD SPEND","R$10,382.42","flat"],
+    ["2027 CONSERVADOR BUDGET","R$18,182.82","flat"],
+    ["TOTAL LEDGER","3,572 tx","flat"]
+  ];
+  var cls = {up:'up', down:'down', flat:'flat'};
+  var track = document.getElementById('ticktrack');
+  function buildTicker(){
+    track.innerHTML = '';
+    tickItems.concat(tickItems).forEach(function(it){
+      var span = document.createElement('span');
+      span.className = 'tick';
+      span.innerHTML = '<span class="tn">'+it[0]+'</span><span class="'+cls[it[2]]+'">'+it[1]+'</span>';
+      track.appendChild(span);
+    });
+  }
+  buildTicker();
+</script>
