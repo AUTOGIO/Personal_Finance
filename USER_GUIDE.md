@@ -9,7 +9,7 @@ covers day-to-day use.
 ## Quick start
 
 ```
-cd ~/Desktop/edu_price_analysis
+cd ~/Documents/GitHub/edu_price_analysis
 make open
 ```
 
