@@ -87,7 +87,6 @@ walkthrough.
 
 ## Known open item
 
-`TRX-13557`–`TRX-13571` (Masterboi Paraíba, 15 items) use a **placeholder
-date of 2026-09-02** — the real receipt date was never confirmed. Correct
-it in `Registro de Compras` if/when the true date surfaces; don't treat it
-as verified.
+None currently. `TRX-13557`–`TRX-13571` (Masterboi Paraíba, 15 items) used
+a placeholder date of 2026-09-02, later confirmed against the physical
+receipt (2026-09-04) — no correction needed.

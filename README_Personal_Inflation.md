@@ -92,4 +92,4 @@ The project models three distinct scenarios for 2027 based on your baseline annu
 
 **Dados adicionados**:
 * 238 transações do Supermercado Litoral (notas fiscais de 02/07/2026, 16/07/2026 e 02/09/2026)
-* 15 transações da **Masterboi Paraíba** (CNPJ 03.721.769/0003-59, João Pessoa/PB) — **data usada: 02/09/2026 (placeholder — não visível no recibo enviado; corrija a célula se souber a data exata)**
+* 15 transações da **Masterboi Paraíba** (CNPJ 03.721.769/0003-59, João Pessoa/PB) — data 02/09/2026, confirmada contra o recibo físico em 04/09/2026 (antes tratada como placeholder)
