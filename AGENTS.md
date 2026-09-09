@@ -85,8 +85,67 @@ deleting, that folder is where it goes; keep following rule 3 below.
 Makefile at the project root, or `USER_GUIDE.md` for the human-facing
 walkthrough.
 
+## Session & context hygiene
+
+- **One tab per track.** Track 1 (IIP) and Track 2 (Cash-Flow Sanebox) have
+  separate canonical files and source data — don't work both in the same
+  chat tab/session; open a new tab if a request switches tracks.
+- **Never paste a full raw file into a prompt.** The 5-part
+  `Price_History` CSVs and the two `.xlsx` models are large/tabular —
+  reference specific rows, sheets, or ranges instead.
+- **Start a fresh tab/session after each append-and-verify cycle** rather
+  than extending one long conversation into the next unrelated task.
+- **No pinning.** Re-`@`-mention `AGENTS.md` or the relevant file each
+  time you need it; don't rely on a pinned file to stay fresh.
+- **Antigravity:** the "Known open item" section below is this project's
+  Knowledge Item log — check it before starting work, update it (don't
+  just delete entries) once an item is resolved.
+- Enforced versions of the above live in
+  `.cursor/rules/020-context-and-tabs.mdc` (always-on) and
+  `.cursor/rules/030-verification.mdc` (manual — invoke with
+  `@030-verification` before closing out an edit). Human-facing pre-flight
+  checklist: `CONTEXT_CHECKLIST.md`.
+
+## Boundary with `Personal_Finance` — read before comparing totals
+
+`~/Documents/GitHub/Personal_Finance` reads the **same Mercado Pago and Banco do
+Brasil statements** this project does, and both look like "personal finance".
+They measure different things, and their totals are *supposed* to differ:
+
+| | This repo (`edu_price_analysis`) | `Personal_Finance` |
+|---|---|---|
+| Question | How much more am I paying **for the same items**? | Where is my money, and what did I spend **by category**? |
+| Unit | An item line on a receipt | A transaction |
+| Source of truth | `Registro de Compras` ledger | `CALC` (wealth) + `raw/` statements |
+| Headline | IIP +40.23% cumulative, R$79.7k ledger 2022–2026 | ~R$282k Jan–Sep 2026 across 26 categories |
+
+**Never reconcile one against the other, and never merge them.** A price index and
+a spend total answer different questions from overlapping data. A classification
+table, ledger or dashboard belonging to the other project does not belong in this
+repo — see the 2026-09-08 entry below.
+
+**The naming trap.** This repo's `origin` is `AUTOGIO/Personal_Finance`.
+`Personal_Finance`'s `origin` is `AUTOGIO/Personal_Finance_Dashboards`, and it
+carries a second remote (`archive-edu-price-analysis`) pointing at *this* repo's
+origin. A 2026-09-07 audit of that repo mistook this project's `29773ca` for its
+own remote head and raised a false "remote divergence" risk. Always name the
+remote explicitly.
+
 ## Known open item
 
 None currently. `TRX-13557`–`TRX-13571` (Masterboi Paraíba, 15 items) used
 a placeholder date of 2026-09-02, later confirmed against the physical
 receipt (2026-09-04) — no correction needed.
+
+**Resolved 2026-09-08**
+
+- `02_Models/personal_inflation_tracker-v2.BACKUP_pre_append.xlsx` — the rollback
+  point for the Sep/2026 253-row append was **missing from the working tree**
+  (`A_NOTE_TO_FUTURE_ME.md` §8 had already flagged it as absent). Restored from
+  git (`6f1b355`) and verified byte-identical to the tracked blob, valid zip,
+  sheets `Terminal IIP` + `Registro de Compras`. Keep it until the append is
+  fully trusted.
+- `Items_to_review.csv` at the repo root belonged to **`Personal_Finance`** — its
+  95-row spending-classification table, carrying one answered row. Nothing here
+  read it. Copied to `Personal_Finance/reports/2026-09-08_items_to_review_answered.csv`
+  and the original moved to `_to_delete/` per hard rule 3. **Eduardo deletes it.**
